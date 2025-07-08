@@ -1,0 +1,76 @@
+-- Script داخل كل شاحنة
+local maxPlayers = 5
+local playersInTruck = {}
+
+function onPlayerEnter(player)
+    if #playersInTruck < maxPlayers then
+        table.insert(playersInTruck, player)
+        player:MoveTo(Vector3.new(0, 2, 0)) -- موقع الجلوس
+        if #playersInTruck == maxPlayers then
+            wait(3)
+            teleportToForest(playersInTruck)
+        end
+    end
+end
+
+function teleportToForest(playerList)
+    for _, p in ipairs(playerList) do
+        p:MoveTo(workspace.ForestSpawn.Position)
+    end
+end
+-- Script في ServerScriptService
+local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
+
+local NIGHT_DURATION = 90 -- ثانية
+local DAY_DURATION = 60 -- ثانية
+
+while true do
+    -- Night
+    Lighting:SetMinutesAfterMidnight(0)
+    print("الليل بدأ!")
+    wait(NIGHT_DURATION)
+
+    -- Day
+    Lighting:SetMinutesAfterMidnight(720) -- 12:00 ظهرًا
+    print("الصباح بدأ!")
+    wait(DAY_DURATION)
+end
+-- داخل Script الوحش
+local monster = script.Parent
+local lightSensor = monster:FindFirstChild("LightSensor") -- Part أو Trigger
+
+while true do
+    if lightSensor.Brightness > 3 then
+        -- يهرب الوحش
+        monster:MoveTo(Vector3.new(0,0,100)) -- مثال
+    else
+        -- يطارد أقرب لاعب
+        local nearestPlayer = getNearestPlayer(monster.Position)
+        if nearestPlayer then
+            monster:MoveTo(nearestPlayer.Character.HumanoidRootPart.Position)
+        end
+    end
+    wait(1)
+end
+-- مكان تجمع اللاعبين
+local campfire = script.Parent
+local fireLevel = 0
+
+function addWood(player)
+    fireLevel = fireLevel + 1
+    updateFireVisuals(fireLevel)
+    if fireLevel >= 10 then
+        escapeSequence()
+    end
+end
+
+function updateFireVisuals(level)
+    -- غير حجم ووهج النار حسب المستوى
+    campfire.Fire.Size = Vector3.new(level, level, level)
+end
+local humanoid = player.Character:FindFirstChild("Humanoid")
+local anim = Instance.new("Animation")
+anim.AnimationId = "rbxassetid://507777826" -- مشي مثال
+local walkAnim = humanoid:LoadAnimation(anim)
+walkAnim:Play()
